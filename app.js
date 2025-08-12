@@ -166,4 +166,19 @@ if (form) {
   });
 }
 
+// Floating WhatsApp button
+(() => {
+  const phone = '+919057623407';
+  const prefilled = encodeURIComponent('Hi Raman! I just visited your portfolio and would like to discuss a project.');
+  const waUrl = `https://wa.me/${phone.replace(/[^\d]/g, '')}?text=${prefilled}`;
+  const btn = document.createElement('a');
+  btn.href = waUrl;
+  btn.className = 'whatsapp-fab';
+  btn.target = '_blank';
+  btn.rel = 'noreferrer noopener';
+  btn.setAttribute('aria-label', 'Chat on WhatsApp');
+  btn.innerHTML = '<i class="fab fa-whatsapp" aria-hidden="true"></i>';
+  document.body.appendChild(btn);
+})();
+
 
