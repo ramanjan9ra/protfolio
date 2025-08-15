@@ -642,6 +642,44 @@ h2 {
   font-weight: 400;
 }
 
+/* Contact form submit button refinements */
+.contact-form .btn-primary {
+  padding: 10px 14px; /* smaller */
+  font-size: 14px;   /* smaller */
+  border-radius: 10px;
+  letter-spacing: 0.2px;
+  box-shadow: var(--shadow);
+}
+.contact-form .btn-primary:hover {
+  filter: saturate(112%);
+  transform: translateY(-1px);
+}
+.contact-form .btn-primary:disabled,
+.contact-form .btn-primary.is-loading {
+  opacity: 0.9;
+  cursor: not-allowed;
+  transform: none;
+}
+/* Inline spinner shown while sending */
+.btn-primary .spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(2, 19, 26, 0.3);
+  border-top-color: #02131a;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Optional status text styling */
+.form-status {
+  margin: 6px 2px 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
 .site-footer {
   margin-top: 48px;
   border-top: 1px solid var(--border);

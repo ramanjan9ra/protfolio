@@ -145,25 +145,99 @@ document.querySelectorAll('.reveal').forEach(el => io.observe(el));
 const yearEl = document.getElementById('year');
 if (yearEl) yearEl.textContent = new Date().getFullYear();
 
-// Contact form (client‑side only demo)
+// Contact form: AJAX with FormSubmit (no redirect) or fallback demo
 const form = document.getElementById('contact-form');
 if (form) {
-  const statusEl = document.createElement('p');
-  statusEl.className = 'form-status';
-  form.appendChild(statusEl);
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const data = Object.fromEntries(new FormData(form).entries());
-    if (!data.name || !data.email || !data.message || !data.subject) {
-      statusEl.textContent = 'Please fill in all fields.';
-      return;
+  const usesFormSubmit = /formsubmit\.co/.test(form.getAttribute('action') || '');
+  const ensureStatusEl = () => {
+    let el = form.querySelector('.form-status');
+    if (!el) {
+      el = document.createElement('p');
+      el.className = 'form-status';
+      form.appendChild(el);
     }
-    // Demo: pretend to send
-    statusEl.textContent = 'Sending…';
-    await new Promise(r => setTimeout(r, 900));
-    statusEl.textContent = 'Thanks! Your message has been queued. I will get back to you shortly.';
-    form.reset();
-  });
+    return el;
+  };
+
+  const setButtonLoading = (btn, loading) => {
+    if (!btn) return;
+    if (loading) {
+      btn.dataset.original = btn.innerHTML;
+      btn.innerHTML = '<span class="spinner" aria-hidden="true"></span>Sending…';
+      btn.classList.add('is-loading');
+      btn.disabled = true;
+    } else {
+      btn.disabled = false;
+      btn.classList.remove('is-loading');
+      btn.innerHTML = btn.dataset.original || 'Send Message';
+    }
+  };
+
+  if (usesFormSubmit) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const statusEl = ensureStatusEl();
+      statusEl.textContent = '';
+      const btn = form.querySelector('button[type="submit"]');
+      setButtonLoading(btn, true);
+
+      // Build AJAX endpoint for FormSubmit
+      const action = form.getAttribute('action') || '';
+      let ajaxUrl = '';
+      try {
+        const u = new URL(action);
+        ajaxUrl = `${u.origin}/ajax${u.pathname}`;
+      } catch (_) {
+        ajaxUrl = action.replace('https://formsubmit.co/', 'https://formsubmit.co/ajax/');
+      }
+
+      try {
+        const fd = new FormData(form);
+        const res = await fetch(ajaxUrl, {
+          method: 'POST',
+          headers: { 'Accept': 'application/json' },
+          body: fd,
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && (data.success || data.message || data.result !== 'error')) {
+          statusEl.textContent = 'Thanks! Your message has been sent.';
+          form.reset();
+        } else {
+          statusEl.textContent = (data.message || 'Unable to send right now. Please try again later.');
+        }
+      } catch (err) {
+        statusEl.textContent = 'Network error. Please check your connection and try again.';
+      } finally {
+        setButtonLoading(btn, false);
+      }
+    });
+  } else {
+    // Demo fallback (no external service)
+    const statusEl = ensureStatusEl();
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = form.querySelector('button[type="submit"]');
+      const data = Object.fromEntries(new FormData(form).entries());
+      if (!data.name || !data.email || !data.message || !data.subject) {
+        statusEl.textContent = 'Please fill in all fields.';
+        return;
+      }
+      setButtonLoading(btn, true);
+      await new Promise(r => setTimeout(r, 900));
+      statusEl.textContent = 'Thanks! Your message has been queued. I will get back to you shortly.';
+      form.reset();
+      setButtonLoading(btn, false);
+    });
+  }
+
+  // If coming from previous behavior (?sent), still show a banner
+  const url = new URL(window.location.href);
+  if (url.searchParams.get('sent') === '1') {
+    const note = document.createElement('div');
+    note.className = 'banner success';
+    note.textContent = 'Thanks! Your message has been sent.';
+    form.parentElement?.insertBefore(note, form);
+  }
 }
 
 // Floating WhatsApp button
